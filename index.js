@@ -29,6 +29,7 @@ const run = async () => {
     try {
         const userCollection = client.db("resellCar").collection("users")
         const productCollection = client.db("resellCar").collection("products")
+        const bookingCollection = client.db("resellCar").collection("bookings")
         app.put("/users/:email", async (req, res) => {
             const email = req.params.email;
             const user = req.body;
@@ -36,7 +37,8 @@ const run = async () => {
             const option = { upsert: true }
             const updateDoc = {
                 $set: {
-                    user
+                    email: user?.email,
+                    role: user?.role
                 }
             }
 
@@ -44,30 +46,36 @@ const run = async () => {
 
             const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: "10h" })
 
-            res.send({token,result})
+            res.send({ token, result })
 
         })
 
-        app.post("/products",async(req,res)=>{
-            const product=req.body;
-            const result=await productCollection.insertOne(product)
+        app.post("/products", async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product)
             res.send(result)
         })
 
-        app.get("/poducts-category",async(req,res)=>{
-            const query={}
-            const result=await productCollection.distinct("category")
+        app.get("/poducts-category", async (req, res) => {
+            const query = {}
+            const result = await productCollection.distinct("category")
             res.send(result)
         })
-        app.get("/products",async(req,res)=>{
-            const query={}
-            const result=await productCollection.find(query).toArray()
+        app.get("/products", async (req, res) => {
+            const query = {}
+            const result = await productCollection.find(query).toArray()
             res.send(result)
         })
-        app.get("/products/:category",async(req,res)=>{
-            const category=req.params.category;
-            const query={category:category}
-            const result=await productCollection.find(query).toArray()
+        app.get("/products/:category", async (req, res) => {
+            const category = req.params.category;
+            const query = { category: category }
+            const result = await productCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        app.post("/bookings", async (req, res) => {
+            const product = req.body;
+            const result = await bookingCollection.insertOne(product)
             res.send(result)
         })
 

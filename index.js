@@ -28,6 +28,7 @@ console.log(uri)
 const run = async () => {
     try {
         const userCollection = client.db("resellCar").collection("users")
+        const productCollection = client.db("resellCar").collection("products")
         app.put("/users/:email", async (req, res) => {
             const email = req.params.email;
             const user = req.body;
@@ -45,6 +46,18 @@ const run = async () => {
 
             res.send({token,result})
 
+        })
+
+        app.post("/products",async(req,res)=>{
+            const product=req.body;
+            const result=await productCollection.insertOne(product)
+            res.send(result)
+        })
+
+        app.get("/poducts-category",async(req,res)=>{
+            const query={}
+            const result=await productCollection.distinct("category")
+            res.send(result)
         })
 
     }

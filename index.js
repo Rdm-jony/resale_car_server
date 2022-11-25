@@ -50,6 +50,14 @@ const run = async () => {
 
         })
 
+        app.get("/users/seller/:email",async(req,res)=>{
+            const email=req.params.email;
+            const query={email:email}
+            const result=await userCollection.findOne(query)
+            console.log(result)
+            res.send({isSeller:result.role==="Seller"})
+        })
+
         app.post("/products", async (req, res) => {
             const product = req.body;
             const result = await productCollection.insertOne(product)

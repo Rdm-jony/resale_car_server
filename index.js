@@ -59,6 +59,17 @@ const run = async () => {
             const result=await productCollection.distinct("category")
             res.send(result)
         })
+        app.get("/products",async(req,res)=>{
+            const query={}
+            const result=await productCollection.find(query).toArray()
+            res.send(result)
+        })
+        app.get("/products/:category",async(req,res)=>{
+            const category=req.params.category;
+            const query={category:category}
+            const result=await productCollection.find(query).toArray()
+            res.send(result)
+        })
 
     }
     finally {

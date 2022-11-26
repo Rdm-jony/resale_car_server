@@ -20,7 +20,8 @@ app.listen(port, () => {
 })
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { query } = require('express');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.tbsccmb.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 console.log(uri)
@@ -50,12 +51,19 @@ const run = async () => {
 
         })
 
-        app.get("/users/seller/:email",async(req,res)=>{
-            const email=req.params.email;
-            const query={email:email}
-            const result=await userCollection.findOne(query)
+        app.get("/users/seller/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await userCollection.findOne(query)
             console.log(result)
-            res.send({isSeller:result.role==="Seller"})
+            res.send({ isSeller: result.role === "Seller" })
+        })
+        app.get("/users/buyer/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await userCollection.findOne(query)
+            console.log(result)
+            res.send({ isBuyer: result.role === "Buyer" })
         })
 
         app.post("/products", async (req, res) => {
@@ -81,9 +89,23 @@ const run = async () => {
             res.send(result)
         })
 
+        app.delete("/products/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await productCollection.deleteOne(query)
+            res.send(result)
+        })
+
         app.post("/bookings", async (req, res) => {
             const product = req.body;
             const result = await bookingCollection.insertOne(product)
+            res.send(result)
+        })
+
+        app.get("/my-products/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await productCollection.find(query).toArray()
             res.send(result)
         })
 

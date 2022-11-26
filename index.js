@@ -31,6 +31,7 @@ const run = async () => {
         const userCollection = client.db("resellCar").collection("users")
         const productCollection = client.db("resellCar").collection("products")
         const bookingCollection = client.db("resellCar").collection("bookings")
+        const advertiseCollection = client.db("resellCar").collection("advertisment")
         app.put("/users/:email", async (req, res) => {
             const email = req.params.email;
             const user = req.body;
@@ -108,10 +109,58 @@ const run = async () => {
             const result = await productCollection.find(query).toArray()
             res.send(result)
         })
+        app.put("/products/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const option = { upsert: true }
+            const updateDoc = {
+                $set: {
+                    status: "sold",
+                    advertise: "false"
+                }
+            }
+            const result = await productCollection.updateOne(query, updateDoc, option)
+            res.send({ result, updateDoc })
+
+        })
+
+        app.put("/advertisment/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const option = { upsert: true }
+            const updateDoc = {
+                $set: {
+                    advertise: "true"
+                }
+            }
+            const result = await productCollection.updateOne(query, updateDoc, option)
+            res.send(result)
+        })
+
+        app.put("/advertisment/remove/:id", async (req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const query = { _id: ObjectId(id) }
+            const option = { upsert: true }
+            const updateDoc = {
+                $set: {
+                    advertise: "false"
+                }
+            }
+            const result = await productCollection.updateOne(query, updateDoc, option)
+            res.send(result)
+        })
+
+        app.get("/advertisment", async (req, res) => {
+            const query = {}
+            const results = await productCollection.find(query).toArray()
+            const filter = results.filter(result => result.advertise === "true")
+            res.send(filter)
+        })
 
     }
     finally {
 
     }
 }
-run().catch(e => console.log(er))
+run().catch(er => console.log(er))

@@ -24,7 +24,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { query } = require('express');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.tbsccmb.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-console.log(uri)
+
 
 const run = async () => {
     try {
@@ -35,12 +35,14 @@ const run = async () => {
         app.put("/users/:email", async (req, res) => {
             const email = req.params.email;
             const user = req.body;
+            
             const filter = { email: email }
             const option = { upsert: true }
             const updateDoc = {
                 $set: {
                     email: user?.email,
-                    role: user?.role
+                    role: user?.role,
+                    name: user?.name
                 }
             }
 
@@ -56,14 +58,22 @@ const run = async () => {
             const email = req.params.email;
             const query = { email: email }
             const result = await userCollection.findOne(query)
-            console.log(result)
+
             res.send({ isSeller: result.role === "Seller" })
         })
+        app.get("/users/admin/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await userCollection.findOne(query)
+
+            res.send({ isAdmin: result.role === "Admin" })
+        })
+
         app.get("/users/buyer/:email", async (req, res) => {
             const email = req.params.email;
             const query = { email: email }
             const result = await userCollection.findOne(query)
-            console.log(result)
+
             res.send({ isBuyer: result.role === "Buyer" })
         })
 
@@ -139,7 +149,7 @@ const run = async () => {
 
         app.put("/advertisment/remove/:id", async (req, res) => {
             const id = req.params.id;
-            console.log(id)
+
             const query = { _id: ObjectId(id) }
             const option = { upsert: true }
             const updateDoc = {
@@ -156,6 +166,26 @@ const run = async () => {
             const results = await productCollection.find(query).toArray()
             const filter = results.filter(result => result.advertise === "true")
             res.send(filter)
+        })
+
+        app.get("/all-buyers", async (req, res) => {
+            const query = {}
+            const results = await userCollection.find(query).toArray()
+            const filter = results.filter(result => result.role === "Buyer")
+            res.send(filter)
+        })
+        app.get("/all-sellers", async (req, res) => {
+            const query = {}
+            const results = await userCollection.find(query).toArray()
+            const filter = results.filter(result => result.role === "Seller")
+            res.send(filter)
+        })
+
+        app.delete("/users/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await userCollection.deleteOne(query)
+            res.send(result)
         })
 
     }

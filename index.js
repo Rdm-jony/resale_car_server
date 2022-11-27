@@ -35,7 +35,7 @@ const run = async () => {
         app.put("/users/:email", async (req, res) => {
             const email = req.params.email;
             const user = req.body;
-            
+
             const filter = { email: email }
             const option = { upsert: true }
             const updateDoc = {
@@ -52,6 +52,19 @@ const run = async () => {
 
             res.send({ token, result })
 
+        })
+
+        app.put("/users/verify/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const option = { upsert: true }
+            const updateDoc = {
+                $set: {
+                    verified: req.body.isVerified
+                }
+            }
+            const result = await userCollection.updateOne(query, updateDoc, option)
+            res.send(result)
         })
 
         app.get("/users/seller/:email", async (req, res) => {
@@ -81,6 +94,20 @@ const run = async () => {
             const product = req.body;
             const result = await productCollection.insertOne(product)
             res.send(result)
+        })
+
+        app.put("/products/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const option = { upsert: true }
+            const updateDoc = {
+                $set: {
+                    verified: req.body.isVerified
+                }
+            }
+            const verifItem = await productCollection.updateMany(query, updateDoc, option)
+            res.send(verifItem)
+
         })
 
         app.get("/poducts-category", async (req, res) => {
@@ -126,7 +153,7 @@ const run = async () => {
             const updateDoc = {
                 $set: {
                     status: "sold",
-                    advertise: "false"
+                    advertise: false
                 }
             }
             const result = await productCollection.updateOne(query, updateDoc, option)
@@ -140,31 +167,18 @@ const run = async () => {
             const option = { upsert: true }
             const updateDoc = {
                 $set: {
-                    advertise: "true"
+                    advertise: req.body.isAdvertised
                 }
             }
             const result = await productCollection.updateOne(query, updateDoc, option)
             res.send(result)
         })
 
-        app.put("/advertisment/remove/:id", async (req, res) => {
-            const id = req.params.id;
-
-            const query = { _id: ObjectId(id) }
-            const option = { upsert: true }
-            const updateDoc = {
-                $set: {
-                    advertise: "false"
-                }
-            }
-            const result = await productCollection.updateOne(query, updateDoc, option)
-            res.send(result)
-        })
 
         app.get("/advertisment", async (req, res) => {
             const query = {}
             const results = await productCollection.find(query).toArray()
-            const filter = results.filter(result => result.advertise === "true")
+            const filter = results.filter(result => result.advertise === true)
             res.send(filter)
         })
 

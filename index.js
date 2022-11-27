@@ -147,6 +147,13 @@ const run = async () => {
             res.send(result)
         })
 
+        app.get("/bookings/payment/:id",async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await bookingCollection.findOne(query)
+            res.send(result)
+        })
+
         app.get("/my-products/:email", async (req, res) => {
             const email = req.params.email;
             const query = { email: email }

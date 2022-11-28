@@ -52,6 +52,7 @@ const run = async () => {
 
             const filter = { email: email }
             const findUser = await userCollection.findOne(filter)
+            const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: "10h" })
             if (!findUser) {
                 const option = { upsert: true }
                 const updateDoc = {
@@ -63,11 +64,9 @@ const run = async () => {
                 }
 
                 const result = await userCollection.updateOne(filter, updateDoc, option)
-                res.send({ result })
+                return res.send({ result, token })
 
             }
-
-            const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: "10h" })
 
             res.send({ token })
 

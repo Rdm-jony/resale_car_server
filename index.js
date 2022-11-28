@@ -164,7 +164,12 @@ const run = async () => {
             res.send(result)
         })
 
-        app.get("/bookings/:email", async (req, res) => {
+        app.get("/bookings/:email", varifiedJwt, async (req, res) => {
+            const decoded = req.decoded;
+            console.log(decoded)
+            if (decoded?.email !== req.params.email) {
+                res.status(403).send({ mesage: "forbidden access" })
+            }
             const email = req.params.email;
             const query = { userEmail: email }
             const result = await bookingCollection.find(query).toArray()
@@ -211,8 +216,12 @@ const run = async () => {
             res.send(result)
         })
 
-        app.get("/my-products/:email", async (req, res) => {
+        app.get("/my-products/:email", varifiedJwt, async (req, res) => {
             const email = req.params.email;
+            const decoded = req.decoded;
+            if (decoded?.email !== req.params.email) {
+                res.status(403).send({ mesage: "forbidden access" })
+            }
             const query = { email: email }
             const result = await productCollection.find(query).toArray()
             res.send(result)

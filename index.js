@@ -25,13 +25,27 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.tbsccmb.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-
+function varifiedJwt(req, res, next) {
+    const authHeader = req.headers.auhtorization;
+    if (!authHeader) {
+        res.status(401).send({ mesage: "unathorized access" })
+    }
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            res.status(403).send({ mesage: "unathorized access" })
+        }
+        req.decoded = decoded;
+        next()
+    })
+}
 const run = async () => {
     try {
         const userCollection = client.db("resellCar").collection("users")
         const productCollection = client.db("resellCar").collection("products")
         const bookingCollection = client.db("resellCar").collection("bookings")
         const paymentCollection = client.db("resellCar").collection("payments")
+        const reportCollection = client.db("resellCar").collection("reports")
         app.put("/users/:email", async (req, res) => {
             const email = req.params.email;
             const user = req.body;
@@ -136,10 +150,13 @@ const run = async () => {
 
         app.delete("/products/:id", async (req, res) => {
             const id = req.params.id;
-            const query = { _id: ObjectId(id) }
-            const result = await productCollection.deleteOne(query)
+            const productQuery = { _id: ObjectId(id) }
+            const reportQuery = { productId: id }
+            const result = await productCollection.deleteOne(productQuery)
+            const reportItem = await reportCollection.deleteOne(reportQuery)
             res.send(result)
         })
+
 
         app.post("/bookings", async (req, res) => {
             const product = req.body;
@@ -254,6 +271,33 @@ const run = async () => {
             const query = { _id: ObjectId(id) }
             const result = await userCollection.deleteOne(query)
             res.send(result)
+        })
+
+        app.post("/report", async (req, res) => {
+            const product = req.body;
+            const result = await reportCollection.insertOne(product)
+            res.send(result)
+        })
+
+        app.get("/report", async (req, res) => {
+            const query = {}
+            const result = await reportCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        app.get("/banner", async (req, res) => {
+            const query = {}
+            const bannerData = []
+            const result = await productCollection.find(query).project({ productName: 1, productImage: 1 }).toArray()
+            result?.map(item => {
+                const bannerItem = {}
+                console.log(item.productName)
+                bannerItem.image = item.productImage
+                bannerItem.caption = item.productName
+                bannerData.push(bannerItem)
+
+            })
+            res.send(bannerData)
         })
 
         app.post("/create-payment-intent", async (req, res) => {

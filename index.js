@@ -3,8 +3,9 @@ const cors = require('cors');
 const port = process.env.PORT || 5000;
 const app = express()
 const jwt = require('jsonwebtoken');
-
 require('dotenv').config()
+const stripe = require("stripe")(process.env.SECRETE_KEY_STRIPE);
+
 
 
 //middleware
@@ -21,7 +22,6 @@ app.listen(port, () => {
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const { query } = require('express');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.tbsccmb.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
@@ -31,26 +31,31 @@ const run = async () => {
         const userCollection = client.db("resellCar").collection("users")
         const productCollection = client.db("resellCar").collection("products")
         const bookingCollection = client.db("resellCar").collection("bookings")
-        const advertiseCollection = client.db("resellCar").collection("advertisment")
+        const paymentCollection = client.db("resellCar").collection("payments")
         app.put("/users/:email", async (req, res) => {
             const email = req.params.email;
             const user = req.body;
 
             const filter = { email: email }
-            const option = { upsert: true }
-            const updateDoc = {
-                $set: {
-                    email: user?.email,
-                    role: user?.role,
-                    name: user?.name
+            const findUser = await userCollection.findOne(filter)
+            if (!findUser) {
+                const option = { upsert: true }
+                const updateDoc = {
+                    $set: {
+                        email: user?.email,
+                        role: user?.role,
+                        name: user?.name
+                    }
                 }
-            }
 
-            const result = await userCollection.updateOne(filter, updateDoc, option)
+                const result = await userCollection.updateOne(filter, updateDoc, option)
+                res.send({ result })
+
+            }
 
             const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: "10h" })
 
-            res.send({ token, result })
+            res.send({ token })
 
         })
 
@@ -110,6 +115,8 @@ const run = async () => {
 
         })
 
+
+
         app.get("/poducts-category", async (req, res) => {
             const query = {}
             const result = await productCollection.distinct("category")
@@ -147,10 +154,29 @@ const run = async () => {
             res.send(result)
         })
 
-        app.get("/bookings/payment/:id",async (req, res) => {
+        app.get("/bookings/payment/:id", async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) }
             const result = await bookingCollection.findOne(query)
+            res.send(result)
+        })
+
+        app.put("/bookings/:id", async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const option = { upsert: true }
+            const updateDoc = {
+                $set: {
+                    paid: true
+                }
+            }
+            const result = await bookingCollection.updateOne(filter, updateDoc, option)
+            res.send(result)
+        })
+
+        app.post("/payments", async (req, res) => {
+            const paymentInfo = req.body;
+            const result = await paymentCollection.insertOne(paymentInfo)
             res.send(result)
         })
 
@@ -215,6 +241,22 @@ const run = async () => {
             const result = await userCollection.deleteOne(query)
             res.send(result)
         })
+
+        app.post("/create-payment-intent", async (req, res) => {
+            const amount = req.body.productPrice;
+            // Create a PaymentIntent with the order amount and currency
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                "payment_method_types": [
+                    "card"
+                ],
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
 
     }
     finally {

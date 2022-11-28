@@ -172,10 +172,24 @@ const run = async () => {
             }
             const result = await bookingCollection.updateOne(filter, updateDoc, option)
             res.send(result)
+
+
         })
 
         app.post("/payments", async (req, res) => {
             const paymentInfo = req.body;
+            const productId = paymentInfo.productId;
+            const filter = { _id: ObjectId(productId) }
+            const option = { upsert: true }
+            const updateDoc = {
+                $set: {
+                    paid: true,
+                    advertise: false
+                }
+            }
+            const updateProduct = await productCollection.updateOne(filter, updateDoc, option)
+
+
             const result = await paymentCollection.insertOne(paymentInfo)
             res.send(result)
         })
